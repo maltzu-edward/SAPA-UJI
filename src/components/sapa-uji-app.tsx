@@ -28,6 +28,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { calculateScore, type ScoredAnswer } from "@/lib/assessment";
 import { DEMO_INSTITUTION_ID, DEMO_STORE_KEY, safeReadDemoStore } from "@/lib/demo-store";
@@ -344,10 +345,10 @@ export function SapaUjiApp() {
           <span>SAPA<span className="teal">-UJI</span><small>SMART RESEARCH, CLEAR UNDERSTANDING</small></span>
         </a>
         <nav className={mobileMenuOpen ? "main-nav nav-open" : "main-nav"} aria-label={language === "id" ? "Navigasi utama" : "Main navigation"}>
-          <a href="/learn" onClick={() => setMobileMenuOpen(false)}>{t.navLearning}</a>
-          <a href="/studies/demo-study" onClick={() => setMobileMenuOpen(false)}>{language === "id" ? "Studi demo" : "Demo study"}</a>
-          <a href="/workspace" onClick={() => setMobileMenuOpen(false)}>{language === "id" ? "Untuk institusi" : "For institutions"}</a>
-          <a href="/login" onClick={() => setMobileMenuOpen(false)}>{language === "id" ? "Masuk demo" : "Demo sign-in"}</a>
+          <Link href="/learn" onClick={() => setMobileMenuOpen(false)}>{t.navLearning}</Link>
+          <Link href="/studies/demo-study" onClick={() => setMobileMenuOpen(false)}>{language === "id" ? "Studi demo" : "Demo study"}</Link>
+          <Link href="/workspace" onClick={() => setMobileMenuOpen(false)}>{language === "id" ? "Untuk institusi" : "For institutions"}</Link>
+          <Link href="/login" onClick={() => setMobileMenuOpen(false)}>{language === "id" ? "Masuk demo" : "Demo sign-in"}</Link>
         </nav>
         <div className="nav-actions">
           <button className="language-button" onClick={() => setLanguage((value) => value === "id" ? "en" : "id")} aria-label={language === "id" ? "Switch language to English" : "Ganti bahasa ke Bahasa Indonesia"}>
@@ -367,7 +368,7 @@ export function SapaUjiApp() {
           <p className="hero-desc">{t.intro}</p>
           <div className="hero-actions">
             <button className="primary" onClick={() => selectModule("simplifier")}>{t.explore}<ChevronRight size={17} /></button>
-            <a className="textlink" href="/studies/demo-study">{language === "id" ? "Lihat studi demo" : "View demo study"}<ArrowRight size={15} /></a>
+            <Link className="textlink" href="/studies/demo-study">{language === "id" ? "Lihat studi demo" : "View demo study"}<ArrowRight size={15} /></Link>
           </div>
           <div className="hero-position"><ShieldCheck size={18} /><span>{t.positioning}</span></div>
         </div>
@@ -445,7 +446,7 @@ export function SapaUjiApp() {
 
       <footer>
         <a className="brand" href="#home"><span className="brandmark"><HeartHandshake size={20} /></span><span>SAPA<span className="teal">-UJI</span><small>{language === "id" ? "PAHAMI PENELITIANNYA, KENALI HAKNYA" : "UNDERSTAND RESEARCH, KNOW YOUR RIGHTS"}</small></span></a>
-        <div className="foot-links"><a href="/learn">{t.navLearning}</a><a href="/questions">{language === "id" ? "Daftar pertanyaan" : "Question list"}</a><a href="/workspace">{language === "id" ? "Untuk institusi" : "For institutions"}</a><a href="/accessibility">{language === "id" ? "Aksesibilitas" : "Accessibility"}</a></div>
+        <div className="foot-links"><Link href="/learn">{t.navLearning}</Link><Link href="/questions">{language === "id" ? "Daftar pertanyaan" : "Question list"}</Link><Link href="/workspace">{language === "id" ? "Untuk institusi" : "For institutions"}</Link><Link href="/accessibility">{language === "id" ? "Aksesibilitas" : "Accessibility"}</Link></div>
         <span className="copyright">© 2026 SAPA-UJI · {t.footer}</span>
       </footer>
       <article className="printable-material" id="printable-material">

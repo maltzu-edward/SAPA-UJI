@@ -149,13 +149,13 @@ function PublicLearningPage({ store }: { store: DemoStore }) {
 }
 
 function LearningDetailPage({ store, id }: { store: DemoStore; id: string }) {
-  const module = store.modules.find((item) => item.id === id && item.status === "PUBLISHED" && belongsToInstitution(item, store.activeInstitutionId));
-  if (!module) return <EmptyState title="Materi tidak ditemukan" text="Materi mungkin belum dipublikasikan." action={<Link className="product-button secondary" href="/learn">Kembali ke pusat belajar</Link>} />;
+  const educationalModule = store.modules.find((item) => item.id === id && item.status === "PUBLISHED" && belongsToInstitution(item, store.activeInstitutionId));
+  if (!educationalModule) return <EmptyState title="Materi tidak ditemukan" text="Materi mungkin belum dipublikasikan." action={<Link className="product-button secondary" href="/learn">Kembali ke pusat belajar</Link>} />;
   return <>
     <Link className="product-back-link" href="/learn"><ArrowLeft size={15} />Pusat belajar</Link>
-    <PageTitle eyebrow={`MATERI UMUM · VERSI ${module.version}.0`} title={module.title} description={module.summary} />
-    <Notice>{module.sourceReference}. Ini bukan protokol atau informasi penelitian klinis tertentu.</Notice>
-    <article className="article-card"><p>{module.content}</p><details><summary>Istilah yang mungkin berguna</summary><p><b>Protokol penelitian:</b> dokumen yang menerangkan tujuan, rencana, prosedur, dan pengawasan penelitian tertentu.</p></details><div className="article-source"><FileText size={15} /><span>Sumber: {module.sourceReference} · Status konten: {module.status}</span></div></article>
+    <PageTitle eyebrow={`MATERI UMUM · VERSI ${educationalModule.version}.0`} title={educationalModule.title} description={educationalModule.summary} />
+    <Notice>{educationalModule.sourceReference}. Ini bukan protokol atau informasi penelitian klinis tertentu.</Notice>
+    <article className="article-card"><p>{educationalModule.content}</p><details><summary>Istilah yang mungkin berguna</summary><p><b>Protokol penelitian:</b> dokumen yang menerangkan tujuan, rencana, prosedur, dan pengawasan penelitian tertentu.</p></details><div className="article-source"><FileText size={15} /><span>Sumber: {educationalModule.sourceReference} · Status konten: {educationalModule.status}</span></div></article>
     <div className="product-button-row"><Link className="product-button primary" href="/assessment">Cek pemahaman<ArrowRight size={16} /></Link><Link className="product-button secondary" href="/questions">Siapkan pertanyaan<HelpCircle size={16} /></Link></div>
   </>;
 }
@@ -317,8 +317,8 @@ function ContentManagementPage({ store, save }: { store: DemoStore; save: (next:
   const institutionModules = store.modules.filter((module) => belongsToInstitution(module, store.activeInstitutionId));
   function addModule(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const data = new FormData(event.currentTarget); const now = new Date().toISOString();
-    const module: DemoModule = { id: makeDemoId("module"), institutionId: store.activeInstitutionId, title: field(data, "title"), topic: field(data, "topic"), summary: field(data, "summary"), content: field(data, "content"), sourceReference: field(data, "sourceReference"), status: "DRAFT", version: 1, updatedAt: now, isDemo: true, history: [{ version: 1, note: "Draf materi dibuat", at: now }] };
-    save({ ...store, modules: [module, ...store.modules], audit: auditEvent(store, "Membuat draf materi", module.title) }); event.currentTarget.reset();
+    const newModule: DemoModule = { id: makeDemoId("module"), institutionId: store.activeInstitutionId, title: field(data, "title"), topic: field(data, "topic"), summary: field(data, "summary"), content: field(data, "content"), sourceReference: field(data, "sourceReference"), status: "DRAFT", version: 1, updatedAt: now, isDemo: true, history: [{ version: 1, note: "Draf materi dibuat", at: now }] };
+    save({ ...store, modules: [newModule, ...store.modules], audit: auditEvent(store, "Membuat draf materi", newModule.title) }); event.currentTarget.reset();
   }
   function updateModule(module: DemoModule, data: FormData) {
     const now = new Date().toISOString(); const version = module.version + 1;

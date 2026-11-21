@@ -33,12 +33,12 @@ export async function PUT(request: NextRequest) {
     requireSameOrigin(request);
     const actor = await requireActor(request);
     const body = await readJson(request, learningProgressSchema);
-    const module = await prisma.educationalModule.findUnique({ where: { id: body.educationalModuleId }, include: { project: true } });
-    if (!module || module.status !== "PUBLISHED" || (module.project && (module.project.visibility !== "PUBLIC" || module.project.reviewStatus !== "PUBLISHED"))) {
+    const educationalModule = await prisma.educationalModule.findUnique({ where: { id: body.educationalModuleId }, include: { project: true } });
+    if (!educationalModule || educationalModule.status !== "PUBLISHED" || (educationalModule.project && (educationalModule.project.visibility !== "PUBLIC" || educationalModule.project.reviewStatus !== "PUBLISHED"))) {
       throw new ApiError(404, "Published educational module not found.", "MODULE_NOT_FOUND");
     }
-    if (module.project) {
-      if (!hasInstitutionAccess(actor, module.project.institutionId) || !hasRole(actor, "PARTICIPANT", module.project.institutionId)) {
+    if (educationalModule.project) {
+      if (!hasInstitutionAccess(actor, educationalModule.project.institutionId) || !hasRole(actor, "PARTICIPANT", educationalModule.project.institutionId)) {
         throw new ApiError(403, "An active participant account for this institution is required.", "PARTICIPANT_ACCESS_REQUIRED");
       }
     } else if (!actor.roles.some(({ role }) => role === "PARTICIPANT")) {
@@ -47,8 +47,8 @@ export async function PUT(request: NextRequest) {
     const now = new Date();
     const completedAt = body.progressPercentage >= 100 ? now : null;
     const progress = await prisma.learningProgress.upsert({
-      where: { participantId_educationalModuleId: { participantId: actor.id, educationalModuleId: module.id } },
-      create: { participantId: actor.id, educationalModuleId: module.id, progressPercentage: body.progressPercentage, completedAt, lastAccessedAt: now },
+      where: { participantId_educationalModuleId: { participantId: actor.id, educationalModuleId: educationalModule.id } },
+      create: { participantId: actor.id, educationalModuleId: educationalModule.id, progressPercentage: body.progressPercentage, completedAt, lastAccessedAt: now },
       update: { progressPercentage: body.progressPercentage, completedAt, lastAccessedAt: now },
       select: { id: true, educationalModuleId: true, progressPercentage: true, startedAt: true, completedAt: true, lastAccessedAt: true },
     });

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { ApiError, apiError, apiResponse, readJson, requireSameOrigin } from "@/lib/api/http";
-import { hasRole, requireActor } from "@/lib/api/auth";
+import { hasRole, requireActor, requireInstitutionRole } from "@/lib/api/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 

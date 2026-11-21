@@ -51,10 +51,10 @@ export async function POST(request: NextRequest) {
     const duplicate = await prisma.educationalModule.findFirst({ where: { researchProjectId: project.id, slug: body.slug }, select: { id: true } });
     if (duplicate) throw new ApiError(409, "A module with this slug already exists for the project.", "MODULE_SLUG_CONFLICT");
     const created = await prisma.$transaction(async (tx) => {
-      const module = await tx.educationalModule.create({ data: { ...body, status: "DRAFT", createdById: actor.id } });
-      await tx.contentVersion.create({ data: { educationalModuleId: module.id, versionNumber: 1, contentSnapshot: toInputJson(body), changeDescription: "Initial draft", createdById: actor.id } });
-      await tx.auditLog.create({ data: { actorId: actor.id, institutionId: project.institutionId, action: "CREATE_EDUCATIONAL_MODULE", resourceType: "EducationalModule", resourceId: module.id } });
-      return module;
+      const newModule = await tx.educationalModule.create({ data: { ...body, status: "DRAFT", createdById: actor.id } });
+      await tx.contentVersion.create({ data: { educationalModuleId: newModule.id, versionNumber: 1, contentSnapshot: toInputJson(body), changeDescription: "Initial draft", createdById: actor.id } });
+      await tx.auditLog.create({ data: { actorId: actor.id, institutionId: project.institutionId, action: "CREATE_EDUCATIONAL_MODULE", resourceType: "EducationalModule", resourceId: newModule.id } });
+      return newModule;
     });
     return apiResponse(created, 201);
   } catch (error) {

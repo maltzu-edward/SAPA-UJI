@@ -42,7 +42,12 @@ export async function PATCH(request: NextRequest, context: Context) {
         select: { id: true, membershipStatus: true, joinedAt: true, user: { select: { id: true, name: true, email: true, isActive: true, roles: { where: { institutionId }, select: { role: true } } } } },
       });
     }, { isolationLevel: "Serializable" });
-    return apiResponse({ id: result.id, membershipStatus: result.membershipStatus, joinedAt: result.joinedAt, ...result.user, roles: result.user.roles.map(({ role }) => role) });
+    return apiResponse({
+      id: result.id,
+      membershipStatus: result.membershipStatus,
+      joinedAt: result.joinedAt,
+      user: result.user,
+    });
   } catch (error) {
     return apiError(error);
   }

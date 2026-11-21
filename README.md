@@ -25,21 +25,24 @@ Scores are learning support only. They must never determine, accept, or reject t
 
 The public learning and institution workflow demo, PostgreSQL API, authentication, tenant roles, source-referenced content review, assessment/teach-back workflows, participant questions, learning progress, audit history, and privacy-suppressed aggregate analytics are implemented as separate layers. The browser demo still uses local state. Email delivery, secure source-document uploads, production rate limiting, and deployment operations are not implemented. Do not use this build with real research or participant data.
 
-## Local setup
+## Setup with Supabase
 
-Requirements: Node.js 20.9+, npm, and Docker Desktop.
+Requirements: Node.js 20.9+, npm, and a Supabase project. Supabase hosts the PostgreSQL database; deploy the Next.js app separately to a Node.js host such as Vercel.
 
-```powershell
-Copy-Item .env.example .env
-docker compose up -d db
-npm install
-npx prisma generate
-npx prisma migrate dev --name init
-npx prisma db seed
-npm run dev
-```
+1. In Supabase, open **Connect** and copy the transaction pooler URL and session pooler URL. Add/update `DATABASE_URL` and `DIRECT_URL` in `.env` using `.env.example` as a template; preserve any existing bootstrap token. Set `DATABASE_URL` to the transaction pooler URL (port `6543`, with `pgbouncer=true`) and `DIRECT_URL` to the session pooler URL (port `5432`) or direct database URL. Keep both values server-side and URL-encode special characters in the password.
+2. Install dependencies, create the schema, and seed the synthetic demo records:
 
-Open http://localhost:3000. The seed creates synthetic demo content and role records with reserved `.test` email addresses. It does not set passwords or create participant records, so the seeded users cannot sign in. Bootstrap the first super administrator using the API, then use invitations to create institution accounts.
+   ```powershell
+   npm install
+   npx prisma generate
+   npm run db:migrate:deploy
+   npm run db:seed
+   npm run dev
+   ```
+
+3. Open http://localhost:3000. The initial migration creates the current Prisma schema in a new, empty Supabase database. The seed creates synthetic demo content and role records with reserved `.test` email addresses. It does not set passwords or create participant records, so the seeded users cannot sign in. Bootstrap the first super administrator using the API, then use invitations to create institution accounts.
+
+The app uses its existing API authentication and database-backed sessions. It does not use Supabase Auth, Supabase Storage, or the Supabase Data API. If this project will use Prisma only, disable the Data API in the Supabase project settings. The browser learning demo remains separate from the database API and continues to use local browser state.
 
 The seed is idempotent and can be rerun with `npm run db:seed`. It updates only the named SAPA-UJI demo records and does not delete other database data.
 
@@ -59,7 +62,7 @@ Run these in an environment with the npm registry available. A passing local bui
 
 ## Environment
 
-See `.env.example`. `DATABASE_URL` is for local PostgreSQL. `SAPA_UJI_BOOTSTRAP_TOKEN` is only for one-time initial administrator setup. Keep it secret and remove it from the runtime environment after bootstrap.
+See `.env.example`. `DATABASE_URL` is the Supabase transaction-pooler URL used by the running app; `DIRECT_URL` is the direct or session-pooler URL used by Prisma CLI migrations. `SAPA_UJI_BOOTSTRAP_TOKEN` is only for one-time initial administrator setup. Keep it secret and remove it from the runtime environment after bootstrap. Configure the same server-side database and app URL values in the chosen Next.js host.
 
 ## Project structure
 

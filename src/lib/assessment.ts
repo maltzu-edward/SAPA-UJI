@@ -6,15 +6,12 @@ export function calculateScore(answers: ScoredAnswer[]) {
   const maximumScore = answers.reduce((sum, answer) => sum + pointsFor(answer), 0);
   const totalScore = answers.reduce((sum, answer) => sum + (answer.correct ? pointsFor(answer) : 0), 0);
   const percentageScore = maximumScore === 0 ? 0 : Math.round((totalScore / maximumScore) * 100);
-  const categories = new Map<string, { correctAnswers: number; totalQuestions: number; earnedPoints: number; maximumPoints: number }>();
+  const categories = new Map<string, { correctAnswers: number; totalQuestions: number }>();
   for (const answer of answers) {
-    const result = categories.get(answer.category) ?? { correctAnswers: 0, totalQuestions: 0, earnedPoints: 0, maximumPoints: 0 };
-    const points = pointsFor(answer);
+    const result = categories.get(answer.category) ?? { correctAnswers: 0, totalQuestions: 0 };
     result.totalQuestions += 1;
-    result.maximumPoints += points;
     if (answer.correct) {
       result.correctAnswers += 1;
-      result.earnedPoints += points;
     }
     categories.set(answer.category, result);
   }
@@ -26,7 +23,7 @@ export function calculateScore(answers: ScoredAnswer[]) {
       category,
       correctAnswers: result.correctAnswers,
       totalQuestions: result.totalQuestions,
-      percentageScore: result.maximumPoints ? Math.round(result.earnedPoints / result.maximumPoints * 100) : 0,
+      percentageScore: result.totalQuestions ? Math.round(result.correctAnswers / result.totalQuestions * 100) : 0,
     })),
   };
 }

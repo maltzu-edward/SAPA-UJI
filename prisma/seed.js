@@ -1,3 +1,4 @@
+/* eslint @typescript-eslint/no-require-imports: off */
 const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
@@ -343,11 +344,11 @@ async function main() {
       update: { ...term, sourceReference: "Materi edukasi umum SAPA-UJI; bukan protokol studi" },
       create: { ...term, sourceReference: "Materi edukasi umum SAPA-UJI; bukan protokol studi", reviewStatus: "PUBLISHED" },
     });
-    const module = moduleBySlug.get("research-purpose");
+    const educationalModule = moduleBySlug.get("research-purpose");
     await prisma.educationalModuleGlossary.upsert({
-      where: { educationalModuleId_glossaryTermId: { educationalModuleId: module.id, glossaryTermId: savedTerm.id } },
+      where: { educationalModuleId_glossaryTermId: { educationalModuleId: educationalModule.id, glossaryTermId: savedTerm.id } },
       update: {},
-      create: { educationalModuleId: module.id, glossaryTermId: savedTerm.id },
+      create: { educationalModuleId: educationalModule.id, glossaryTermId: savedTerm.id },
     });
   }
 
