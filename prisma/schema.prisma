@@ -1,0 +1,444 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql"
+ url = env("DATABASE_URL") }
+enum RoleName {
+ SUPER_ADMIN
+ INSTITUTION_ADMIN
+ RESEARCHER
+ CLINICAL_REVIEWER
+ PARTICIPANT
+}
+enum ReviewStatus {
+ DRAFT
+ SUBMITTED_FOR_REVIEW
+ APPROVED
+ REJECTED
+ REVISION_REQUESTED
+ PUBLISHED
+ ARCHIVED
+}
+enum ProjectVisibility {
+ PRIVATE
+ PUBLIC
+}
+enum AttemptStatus {
+ IN_PROGRESS
+ COMPLETED
+}
+model User { id String @id @default(uuid()) @db.Uuid
+ name String
+ email String @unique
+ passwordHash String?
+ emailVerifiedAt DateTime?
+ avatarUrl String?
+ isActive Boolean @default(true)
+ preferredLanguage String @default("id")
+ accessibilityPreferences Json?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ roles UserRole[]
+ memberships InstitutionMembership[]
+ projects ResearchProject[]
+ attempts AssessmentAttempt[]
+ questions ParticipantQuestion[]
+ learningProgress LearningProgress[]
+ auditLogs AuditLog[]
+ sentInvitations Invitation[] @relation("InvitationsSent")
+ uploadedSourceDocuments ResearchSourceDocument[]
+ createdModules EducationalModule[]
+ contentReviews ContentReview[]
+ contentVersions ContentVersion[]
+ createdAssessments Assessment[]
+ reviewedResponses AssessmentResponse[] @relation("ResponseReviewer")
+ educationalFeedback EducationalFeedback[]
+ notifications Notification[]
+ passwordResetTokens PasswordResetToken[]
+ sessions Session[]
+ @@index([email]) }
+model Institution { id String @id @default(uuid()) @db.Uuid
+ name String
+ slug String @unique
+ institutionType String
+ description String?
+ address String?
+ contactEmail String?
+ logoUrl String?
+ status String @default("ACTIVE")
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ memberships InstitutionMembership[]
+ roles UserRole[]
+ projects ResearchProject[]
+ auditLogs AuditLog[]
+ invitations Invitation[]
+ analyticsSnapshots AnalyticsSnapshot[]
+ @@index([status]) }
+model InstitutionMembership { id String @id @default(uuid()) @db.Uuid
+ userId String @db.Uuid
+ institutionId String @db.Uuid
+ membershipStatus String @default("ACTIVE")
+ joinedAt DateTime @default(now())
+ user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+ institution Institution @relation(fields:[institutionId],references:[id],onDelete:Restrict)
+ @@unique([userId,institutionId])
+ @@index([institutionId]) }
+model UserRole { id String @id @default(uuid()) @db.Uuid
+ userId String @db.Uuid
+ role RoleName
+ institutionId String? @db.Uuid
+ createdAt DateTime @default(now())
+ user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+ institution Institution? @relation(fields:[institutionId],references:[id],onDelete:Restrict)
+ @@unique([userId,role,institutionId])
+ @@index([institutionId,role]) }
+model Invitation { id String @id @default(uuid()) @db.Uuid
+ email String
+ institutionId String @db.Uuid
+ invitedById String @db.Uuid
+ assignedRole RoleName
+ tokenHash String @unique
+ expiresAt DateTime
+ acceptedAt DateTime?
+ createdAt DateTime @default(now())
+ institution Institution @relation(fields:[institutionId],references:[id],onDelete:Restrict)
+ invitedBy User @relation("InvitationsSent", fields:[invitedById],references:[id],onDelete:Restrict)
+ @@index([institutionId,email]) }
+model ResearchProject { id String @id @default(uuid()) @db.Uuid
+ institutionId String @db.Uuid
+ createdById String @db.Uuid
+ title String
+ slug String
+ publicDescription String
+ scientificTitle String?
+ researchType String
+ researchPhase String?
+ researchPurpose String
+ researchStatus String
+ interventionDescription String
+ controlDescription String?
+ durationDescription String
+ potentialBenefits String
+ potentialRisks String
+ participantRights String
+ sourceName String?
+ sourceVersion String?
+ sourceReference String?
+ inclusionInformation String?
+ exclusionInformation String?
+ contactInformation String
+ language String @default("id")
+ visibility ProjectVisibility @default(PRIVATE)
+ reviewStatus ReviewStatus @default(DRAFT)
+ publishedAt DateTime?
+ archivedAt DateTime?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ institution Institution @relation(fields:[institutionId],references:[id],onDelete:Restrict)
+ creator User @relation(fields:[createdById],references:[id],onDelete:Restrict)
+ stages ResearchStage[]
+ modules EducationalModule[]
+ assessments Assessment[]
+ sources ResearchSourceDocument[]
+ reviews ContentReview[]
+ versions ContentVersion[]
+ participantQuestions ParticipantQuestion[]
+ analyticsSnapshots AnalyticsSnapshot[]
+ @@unique([institutionId,slug])
+ @@index([institutionId,reviewStatus])
+ @@index([visibility,reviewStatus]) }
+model ResearchSourceDocument { id String @id @default(uuid()) @db.Uuid
+ researchProjectId String @db.Uuid
+ uploadedById String @db.Uuid
+ fileName String
+ mimeType String
+ fileSize Int
+ storageKey String @unique
+ documentVersion String
+ sourceDescription String?
+ approvalStatus String @default("PENDING")
+ createdAt DateTime @default(now())
+ project ResearchProject @relation(fields:[researchProjectId],references:[id],onDelete:Restrict)
+ uploadedBy User @relation(fields:[uploadedById],references:[id],onDelete:Restrict)
+ @@index([researchProjectId]) }
+model ResearchStage { id String @id @default(uuid()) @db.Uuid
+ researchProjectId String @db.Uuid
+ title String
+ description String
+ stageOrder Int
+ estimatedDuration String?
+ whatHappens String
+ whyItMatters String
+ possibleExperiences String
+ participantRights String
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ project ResearchProject @relation(fields:[researchProjectId],references:[id],onDelete:Restrict)
+ @@unique([researchProjectId,stageOrder]) }
+model EducationalModule { id String @id @default(uuid()) @db.Uuid
+ researchProjectId String? @db.Uuid
+ title String
+ slug String
+ summary String
+ content String
+ sourceReference String?
+ contentType String
+ language String
+ estimatedReadingTime Int
+ orderIndex Int
+ status ReviewStatus @default(DRAFT)
+ createdById String @db.Uuid
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ project ResearchProject? @relation(fields:[researchProjectId],references:[id],onDelete:Restrict)
+ creator User @relation(fields:[createdById],references:[id],onDelete:Restrict)
+ glossary EducationalModuleGlossary[]
+ reviews ContentReview[]
+ versions ContentVersion[]
+ progress LearningProgress[]
+ recommendedFor EducationalFeedback[]
+ @@index([researchProjectId,status]) }
+model GlossaryTerm { id String @id @default(uuid()) @db.Uuid
+ term String
+ simpleDefinition String
+ detailedDefinition String
+ language String
+ category String
+ sourceReference String?
+ reviewStatus ReviewStatus @default(DRAFT)
+ moduleLinks EducationalModuleGlossary[]
+ @@unique([term,language]) }
+model EducationalModuleGlossary { id String @id @default(uuid()) @db.Uuid
+ educationalModuleId String @db.Uuid
+ glossaryTermId String @db.Uuid
+ module EducationalModule @relation(fields:[educationalModuleId],references:[id],onDelete:Restrict)
+ term GlossaryTerm @relation(fields:[glossaryTermId],references:[id],onDelete:Restrict)
+ @@unique([educationalModuleId,glossaryTermId]) }
+model ContentReview { id String @id @default(uuid()) @db.Uuid
+ educationalModuleId String? @db.Uuid
+ researchProjectId String? @db.Uuid
+ assessmentId String? @db.Uuid
+ reviewerId String @db.Uuid
+ reviewType String
+ status ReviewStatus
+ reviewerNotes String
+ reviewedAt DateTime?
+ createdAt DateTime @default(now())
+ module EducationalModule? @relation(fields:[educationalModuleId],references:[id],onDelete:Restrict)
+ project ResearchProject? @relation(fields:[researchProjectId],references:[id],onDelete:Restrict)
+ assessment Assessment? @relation(fields:[assessmentId],references:[id],onDelete:Restrict)
+ reviewer User @relation(fields:[reviewerId],references:[id],onDelete:Restrict)
+ @@index([reviewerId,status]) }
+model ContentVersion { id String @id @default(uuid()) @db.Uuid
+ educationalModuleId String? @db.Uuid
+ researchProjectId String? @db.Uuid
+ assessmentId String? @db.Uuid
+ versionNumber Int
+ contentSnapshot Json
+ changeDescription String
+ createdById String @db.Uuid
+ createdAt DateTime @default(now())
+ module EducationalModule? @relation(fields:[educationalModuleId],references:[id],onDelete:Restrict)
+ project ResearchProject? @relation(fields:[researchProjectId],references:[id],onDelete:Restrict)
+ assessment Assessment? @relation(fields:[assessmentId],references:[id],onDelete:Restrict)
+ creator User @relation(fields:[createdById],references:[id],onDelete:Restrict)
+ @@unique([researchProjectId,versionNumber])
+ @@unique([educationalModuleId,versionNumber])
+ @@unique([assessmentId,versionNumber]) }
+model Assessment { id String @id @default(uuid()) @db.Uuid
+ researchProjectId String @db.Uuid
+ title String
+ description String
+ assessmentType String
+ version Int @default(1)
+ status ReviewStatus @default(DRAFT)
+ createdById String @db.Uuid
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ project ResearchProject @relation(fields:[researchProjectId],references:[id],onDelete:Restrict)
+ creator User @relation(fields:[createdById],references:[id],onDelete:Restrict)
+ questions Question[]
+ attempts AssessmentAttempt[]
+ reviews ContentReview[]
+ versions ContentVersion[]
+ @@index([researchProjectId,status]) }
+model AssessmentCategory { id String @id @default(uuid()) @db.Uuid
+ name String
+ slug String @unique
+ description String
+ questions Question[]
+ results AssessmentTopicResult[]
+ educationalFeedback EducationalFeedback[] }
+model Question { id String @id @default(uuid()) @db.Uuid
+ assessmentId String @db.Uuid
+ categoryId String @db.Uuid
+ questionText String
+ questionType String
+ scenarioText String?
+ explanation String
+ difficulty String
+ points Int @default(1)
+ orderIndex Int
+ status ReviewStatus @default(DRAFT)
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ assessment Assessment @relation(fields:[assessmentId],references:[id],onDelete:Restrict)
+ category AssessmentCategory @relation(fields:[categoryId],references:[id],onDelete:Restrict)
+ options QuestionOption[]
+ rubric TeachBackRubric?
+ responses AssessmentResponse[]
+ @@unique([assessmentId,orderIndex])
+ @@index([assessmentId,status]) }
+model QuestionOption { id String @id @default(uuid()) @db.Uuid
+ questionId String @db.Uuid
+ optionText String
+ isCorrect Boolean @default(false)
+ feedback String
+ orderIndex Int
+ question Question @relation(fields:[questionId],references:[id],onDelete:Restrict)
+ selectedResponses AssessmentResponse[]
+ @@unique([questionId,orderIndex]) }
+model TeachBackRubric { id String @id @default(uuid()) @db.Uuid
+ questionId String @unique @db.Uuid
+ rubricTitle String
+ rubricDescription String
+ evaluationCriteria Json
+ reviewerGuidance String
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ question Question @relation(fields:[questionId],references:[id],onDelete:Restrict) }
+model AssessmentAttempt { id String @id @default(uuid()) @db.Uuid
+ assessmentId String @db.Uuid
+ participantId String @db.Uuid
+ attemptNumber Int
+ startedAt DateTime @default(now())
+ completedAt DateTime?
+ totalScore Float?
+ maximumScore Float?
+ percentageScore Float?
+ status AttemptStatus @default(IN_PROGRESS)
+ createdAt DateTime @default(now())
+ assessment Assessment @relation(fields:[assessmentId],references:[id],onDelete:Restrict)
+ participant User @relation(fields:[participantId],references:[id],onDelete:Restrict)
+ responses AssessmentResponse[]
+ topicResults AssessmentTopicResult[]
+ educationalFeedback EducationalFeedback[]
+ @@unique([assessmentId,participantId,attemptNumber])
+ @@index([participantId,createdAt]) }
+model AssessmentResponse { id String @id @default(uuid()) @db.Uuid
+ attemptId String @db.Uuid
+ questionId String @db.Uuid
+ selectedOptionId String? @db.Uuid
+ textResponse String?
+ awardedPoints Float @default(0)
+ maximumPoints Float
+ feedback String?
+ reviewedById String? @db.Uuid
+ reviewStatus String @default("PENDING")
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ attempt AssessmentAttempt @relation(fields:[attemptId],references:[id],onDelete:Restrict)
+ question Question @relation(fields:[questionId],references:[id],onDelete:Restrict)
+ reviewer User? @relation("ResponseReviewer", fields:[reviewedById],references:[id],onDelete:SetNull)
+ selectedOption QuestionOption? @relation(fields:[selectedOptionId],references:[id],onDelete:SetNull)
+ @@unique([attemptId,questionId])
+ @@index([attemptId]) }
+model AssessmentTopicResult { id String @id @default(uuid()) @db.Uuid
+ attemptId String @db.Uuid
+ categoryId String @db.Uuid
+ correctAnswers Int
+ totalQuestions Int
+ percentageScore Float
+ comprehensionStatus String
+ createdAt DateTime @default(now())
+ attempt AssessmentAttempt @relation(fields:[attemptId],references:[id],onDelete:Restrict)
+ category AssessmentCategory @relation(fields:[categoryId],references:[id],onDelete:Restrict)
+ @@unique([attemptId,categoryId]) }
+model LearningProgress { id String @id @default(uuid()) @db.Uuid
+ participantId String @db.Uuid
+ educationalModuleId String @db.Uuid
+ progressPercentage Float @default(0)
+ startedAt DateTime @default(now())
+ completedAt DateTime?
+ lastAccessedAt DateTime @default(now())
+ participant User @relation(fields:[participantId],references:[id],onDelete:Restrict)
+ module EducationalModule @relation(fields:[educationalModuleId],references:[id],onDelete:Restrict)
+ @@unique([participantId,educationalModuleId])
+ @@index([participantId]) }
+model EducationalFeedback { id String @id @default(uuid()) @db.Uuid
+ participantId String @db.Uuid
+ assessmentAttemptId String @db.Uuid
+ categoryId String @db.Uuid
+ feedbackText String
+ recommendedModuleId String? @db.Uuid
+ createdAt DateTime @default(now())
+ participant User @relation(fields:[participantId],references:[id],onDelete:Restrict)
+ attempt AssessmentAttempt @relation(fields:[assessmentAttemptId],references:[id],onDelete:Restrict)
+ category AssessmentCategory @relation(fields:[categoryId],references:[id],onDelete:Restrict)
+ recommendedModule EducationalModule? @relation(fields:[recommendedModuleId],references:[id],onDelete:SetNull)
+ @@index([participantId,createdAt]) }
+model ParticipantQuestion { id String @id @default(uuid()) @db.Uuid
+ participantId String @db.Uuid
+ researchProjectId String @db.Uuid
+ questionText String
+ category String
+ isCompleted Boolean @default(false)
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ participant User @relation(fields:[participantId],references:[id],onDelete:Restrict)
+ project ResearchProject @relation(fields:[researchProjectId],references:[id],onDelete:Restrict)
+ @@index([participantId,researchProjectId]) }
+model AnalyticsSnapshot { id String @id @default(uuid()) @db.Uuid
+ institutionId String @db.Uuid
+ researchProjectId String? @db.Uuid
+ date DateTime @db.Date
+ totalAttempts Int
+ averageScore Float?
+ completionRate Float?
+ topicMetrics Json
+ createdAt DateTime @default(now())
+ institution Institution @relation(fields:[institutionId],references:[id],onDelete:Restrict)
+ researchProject ResearchProject? @relation(fields:[researchProjectId],references:[id],onDelete:SetNull)
+ @@index([institutionId,date]) }
+model AuditLog { id String @id @default(uuid()) @db.Uuid
+ actorId String? @db.Uuid
+ institutionId String? @db.Uuid
+ action String
+ resourceType String
+ resourceId String
+ metadata Json?
+ ipAddress String?
+ userAgent String?
+ createdAt DateTime @default(now())
+ actor User? @relation(fields:[actorId],references:[id],onDelete:SetNull)
+ institution Institution? @relation(fields:[institutionId],references:[id],onDelete:SetNull)
+ @@index([institutionId,createdAt])
+ @@index([resourceType,resourceId])
+ @@index([createdAt]) }
+model Notification { id String @id @default(uuid()) @db.Uuid
+ userId String @db.Uuid
+ title String
+ message String
+ type String
+ isRead Boolean @default(false)
+ actionUrl String?
+ createdAt DateTime @default(now())
+ user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+ @@index([userId,isRead]) }
+model PasswordResetToken { id String @id @default(uuid()) @db.Uuid
+ userId String @db.Uuid
+ tokenHash String @unique
+ expiresAt DateTime
+ usedAt DateTime?
+ createdAt DateTime @default(now())
+ user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+ @@index([userId,expiresAt]) }
+
+model Session { id String @id @default(uuid()) @db.Uuid
+ userId String @db.Uuid
+ tokenHash String @unique
+ expiresAt DateTime
+ revokedAt DateTime?
+ createdAt DateTime @default(now())
+ user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+ @@index([userId,expiresAt]) }
+

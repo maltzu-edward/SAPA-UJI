@@ -1,0 +1,7 @@
+# Security status
+
+The browser demo still uses local state for participant answers, teach-back text, and question lists, and browser `localStorage` for workspace examples. It is not connected to the API. The API separately supports password login, database-backed sessions, invitation acceptance, role and tenant checks, content-review workflows, attempts, participant questions, and aggregate reports. Do not enter real participant information or clinical study documents.
+
+`next.config.ts` sets basic browser security headers. API sessions use random opaque tokens stored as hashes in the database, `HttpOnly`/`SameSite=Strict` cookies, and explicit same-origin checks for mutations. Passwords use scrypt. API permissions are enforced server-side, and teach-back responses require explicit storage consent and a human reviewer. Aggregate reporting suppresses groups smaller than five distinct participants. The current rate limiter is in-process and is not sufficient for multi-instance production. Source-document storage, file scanning, backup/restore operations, monitoring, data-retention automation, and a formal privacy/security review are not implemented. The browser role picker remains a demo control, not an authorization mechanism.
+
+Before handling real study or participant data, complete those operational controls, apply and review migrations, establish approved-source and independent content-review workflows, and complete privacy and security review.

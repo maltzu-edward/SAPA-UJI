@@ -1,0 +1,7 @@
+# Database status
+
+`prisma/schema.prisma` defines the PostgreSQL models used by the API for users, hashed sessions, roles, institutions, source references, research projects and stages, reviewed education, question rubrics, assessment attempts and responses, learning progress, participant questions, aggregate analytics, notifications, and audit events.
+
+Relations connect the models that own or review this data. UUID keys and restrictive deletes protect core records; optional links such as a removed reviewer or project snapshot can be set to null. The frontend does not currently instantiate Prisma or store data in this database. `prisma/seed.js` provides a repeatable development seed with a synthetic institution and study, generic learning modules, glossary terms, five-dimension assessment questions, a teach-back rubric, and clearly labeled demo review/version/audit records. Seeded users use reserved `.test` email addresses and have no password credentials; no participant accounts or attempts are created.
+
+No migration has been generated. Before using this schema, validate it and create/inspect the initial migration against a disposable development database. The migration creates the current full schema, including session and content-version uniqueness constraints. Generate the Prisma client before starting the API. The frontend demo still stores its local workspace state in the browser and does not call Prisma. `prisma/seed.js` is additive and idempotent; it does not delete other database records.
